@@ -3,6 +3,12 @@
 use strict;
 use Parse::CSV;
 
+#
+# Global variables for internal use
+$DebuggerOn = 0;
+#
+#
+
 # Need _ things:
 #   1) Expected output columns {titles, patterns}
 #   2) Expected input column detection {no. cols, patterns}
@@ -17,8 +23,22 @@ sub main {
   my $argc = shift;
   
   my($firstCSVFile, $secondCSVFile, $outputCSVFile) = ProcessArguments(@args, $argc);
+  MergeCSVs($firstCSVFile, $secondCSVFile, $outputCSVFile);
+}
+
+# MergeCSVs($,$,$) -- merges the first and second CSV files
+#-- Arguments: $firstCSVFile, the first CSV file path
+#              $secondCSVFile, the second CSV file path
+#              $outputCSVFile, the output CSV file path
+#-- Returns: nothing
+sub MergeCSVs {
+  my $firstCSVFile = shift;
+  my $secondCSVFile = shift;
+  my $outputCSVFile = shift;
+  
   
 }
+
 
 # ProcessArguments(@,$) -- commandline argument processor
 #-- Arguments: @args, the @ARGV or commandline arguments
@@ -34,9 +54,11 @@ sub ProcessArguments {
   my($firstCSVFile, $secondCSVFile, $outputCSVFile) = ("","","");
   
   # Die with usage message if the arguments are wrong.
-  if($argc != 3){
-    UsageDie();
-  }
+  UsageDie() unless $argc > 2;
+  
+  # Trim any switches, if there are any.
+  (@args, $argc) = TrimSwitches(@args, $argc);
+  UsageDie() unless $argc > 2;
   
   # Weirdly works online but not in CLI grep...?
   my $optionRegex = qr/--[A-Za-z0-9\-]+/;
@@ -59,6 +81,18 @@ sub ProcessArguments {
   }
   
   return($firstCSVFile, $secondCSVFile, $outputCSVFile);
+}
+
+# TrimSwitches(@,$) -- trim switches from command line options, if there are any
+#-- Arguments: @args, the @ARGV array copy
+#              $argc, the length of @args
+#-- Returns: @args and $argc, possibly modified.
+sub TrimSwitches {
+  my @args = shift;
+  my $argc = shift;
+  
+  return(@args, $argc) if $args[0] =~ qr/^--[A-Za-z0-9\-]+=.*/; #MUST TEST
+  
 }
 
 # OptionGetFileNumber($) -- determines if argument is first, second, or output file
@@ -102,10 +136,13 @@ sub FileExists {
 #-- Arguments: none
 #-- Returns: nothing, exits. 
 sub UsageDie {
-  die ("Usage: auto-merge.pl OPTION=fn OPTION=fn OPTION=fn\n".
+  die ("Usage: auto-merge.pl [-dh|--*] OPTION=fn OPTION=fn OPTION=fn\n".
     "Options: --first-file=filename         The first CSV file to be processed.\n".
     "         --second-file=filename        The second CSV file to be processed.\n". 
-    "         --output-file=filename        The filename for the output CSV file.\n". 
+    "         --output-file=filename        The filename for the output CSV file.\n".
+    "Switches (optional):\n".
+    "   -h,   --help                        Print usage information.\n".
+    "   -d,   --debug                       Output the intermediary CSV matrix to \$output.debug.csv.\n".
     "Created by Matt Rienzo, 2019.\n");
 }
 
