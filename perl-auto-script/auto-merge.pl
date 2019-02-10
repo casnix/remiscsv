@@ -2,10 +2,11 @@
 
 use strict;
 use Parse::CSV;
+use boolean ':all';
 
 #
 # Global variables for internal use
-$DebuggerOn = 0;
+$DebuggerOn = false;
 #
 #
 
@@ -36,6 +37,13 @@ sub MergeCSVs {
   my $secondCSVFile = shift;
   my $outputCSVFile = shift;
   
+  # 1) Go through $firstCSVFile
+  #     a) in new columns, ask user if they want to create a new column in the intermediate CSV, or merge with an
+  #        existing column.
+  #     b) new columns in output will have mapped names.  columns in intermediate will be mapped to those names or
+  #        to regex functions
+  # 2) Do the same to $secondCSVFile, with the same intermediate CSV
+  # 3) Run regex functions in intermediate CSV, then follow output map to output CSV.
   
 }
 
@@ -92,7 +100,14 @@ sub TrimSwitches {
   my $argc = shift;
   
   return(@args, $argc) if $args[0] =~ qr/^--[A-Za-z0-9\-]+=.*/; #MUST TEST
+
+  my $firstSwitch = shift @args;
+  $argc -= 1;
+  UsageDie() unless $firstSwitch =~ qr/^-(d|-debug)\s/; # It's not necessary to check for -h, --help as they call UsageDie()
+                                                    # anyway.
+  $DebuggerOn = true if $firstSwitch =~ qr/^-(d|-debug)\s/;
   
+  return(@args, $argc);
 }
 
 # OptionGetFileNumber($) -- determines if argument is first, second, or output file
@@ -113,12 +128,12 @@ sub OptionGetFileNumber {
 
 # OptionIsValid($) -- check if the option is a valid commandline option
 #-- Arguments: $option, the commandline option
-#-- Returns: 1 or nothing (dies).
+#-- Returns: true or nothing (dies).
 sub OptionIsValid {
   my $option = shift;
   
   UsageDie() unless $option =~ qr/--(first|second|output)-(file)/;
-  return 1;
+  return true;
 }
 
 # FileExists($) -- check if a file exists
@@ -128,8 +143,8 @@ sub OptionIsValid {
 sub FileExists {
   my $path = shift;
   
-  return(1) if -f $path;
-  return(0);
+  return true if -f $path;
+  return false;
 }
 
 # UsageDie(void) -- print the usage message and exit the program
