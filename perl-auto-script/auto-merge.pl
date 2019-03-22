@@ -3,10 +3,19 @@
 use strict;
 use Parse::CSV;
 use boolean ':all';
-
+use constant DEBUG => true;
 #
 # Global variables for internal use
-$DebuggerOn = false;
+my $DebuggerOn = false;
+#
+#
+
+#
+# Entry point
+print "[entry::debugger] {\n" if DEBUG;
+print "[entry::debugger]   main(\@ARGV, \$#ARGV) = (".@ARGV.", ".$#ARGV.")\n" if DEBUG;
+main(\@ARGV, $#ARGV);
+print "[entry::debugger] }\n" if DEBUG;
 #
 #
 
@@ -20,11 +29,19 @@ $DebuggerOn = false;
 #              $argc, the $#ARGV or commandline arguments length
 #-- Returns: nothing.  exits
 sub main {
-  my @args = shift;
+  print "[main()::debugger] {\n" if DEBUG;
+  print "[main()::debugger]   \@_ = ".@_."\n" if DEBUG;
+  my $args = shift;
   my $argc = shift;
   
-  my($firstCSVFile, $secondCSVFile, $outputCSVFile) = ProcessArguments(@args, $argc);
+  print "[main()::debugger]   \$argc = ".$argc.", \$#ARGV = ".$#ARGV."\n" if DEBUG;
+  print "[main()::debugger]   \$args = ".$args.", \\\@ARGV = ".\@ARGV."\n" if DEBUG;
+  
+  print "[main()::debugger]   ProcessArguments(\@args, \$argc) => (\$firstCSVFile, \$secondCSVFile, \$outputCSVFile)\n" if DEBUG;
+  my($firstCSVFile, $secondCSVFile, $outputCSVFile) = ProcessArguments($args, $argc);
   MergeCSVs($firstCSVFile, $secondCSVFile, $outputCSVFile);
+  
+  print "[main():debugger] }\n" if DEBUG;
 }
 
 # MergeCSVs($,$,$) -- merges the first and second CSV files
@@ -55,17 +72,18 @@ sub MergeCSVs {
 #                           the second CSV input filename,
 #                           the output CSV filename }. 
 sub ProcessArguments {
-  my @args = shift;
+  my @args = @{ (shift) };
   my $argc = shift;
   
   my @returnList = ();
   my($firstCSVFile, $secondCSVFile, $outputCSVFile) = ("","","");
   
   # Die with usage message if the arguments are wrong.
+  UsageDie() unless $argc;
   UsageDie() unless $argc > 2;
   
   # Trim any switches, if there are any.
-  (@args, $argc) = TrimSwitches(@args, $argc);
+  (@args, $argc) = TrimSwitches(\@args, $argc);
   UsageDie() unless $argc > 2;
   
   # Weirdly works online but not in CLI grep...?
@@ -96,10 +114,10 @@ sub ProcessArguments {
 #              $argc, the length of @args
 #-- Returns: @args and $argc, possibly modified.
 sub TrimSwitches {
-  my @args = shift;
+  my @args = @{ (shift) };
   my $argc = shift;
   
-  return(@args, $argc) if $args[0] =~ qr/^--[A-Za-z0-9\-]+=.*/; #MUST TEST
+  return(\@args, $argc) if $args[0] =~ qr/^--[A-Za-z0-9\-]+=.*/; #MUST TEST
 
   my $firstSwitch = shift @args;
   $argc -= 1;
@@ -107,7 +125,7 @@ sub TrimSwitches {
                                                     # anyway.
   $DebuggerOn = true if $firstSwitch =~ qr/^-(d|-debug)\s/;
   
-  return(@args, $argc);
+  return(\@args, $argc);
 }
 
 # OptionGetFileNumber($) -- determines if argument is first, second, or output file
