@@ -1,6 +1,6 @@
 #
 # Entry point
-use constant lclDebugger => new Debugger('MainApplication');
+use constant lclDebugger => Debugger->new('MainApplication');
 
 lclDebugger->Register('entry');
 lclDebugger->OpenHere();
