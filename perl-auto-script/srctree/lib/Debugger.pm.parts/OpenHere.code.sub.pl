@@ -6,13 +6,8 @@
 sub OpenHere {
   my $this = shift;
 
-  $this->$SetRegStackCurrent();
+  $this->&$SetRegStackCurrent();
 
-  # Mod: Isolate in own private function. {
-  if($GlobalEnvironment::DebuggerOn){
-    print "[".$this->{regstack}->Current().".".$this->{section}."]".Tabulate::Tell()."{\n";
-  }
-  # }
-
+  $this->Note("{");
   Tabulate::Increment();
 }
