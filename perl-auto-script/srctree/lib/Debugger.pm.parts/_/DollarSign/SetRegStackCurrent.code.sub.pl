@@ -5,7 +5,6 @@ my $SetRegStackCurrent;
 $SetRegStackCurrent = sub {
   my $this = shift;
 
-
   my $topOfRegStack = $this->{regstack}->Top();
   $this->{regstack}->Set($topOfRegStack);
 };

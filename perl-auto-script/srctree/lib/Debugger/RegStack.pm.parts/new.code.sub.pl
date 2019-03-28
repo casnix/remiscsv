@@ -5,5 +5,10 @@
 sub new {
   my($class, $stub) = @_;
 
-  
+  my $self = {
+    current => $stub,
+    __stack => [ $stub ],
+  };
+
+  return bless $self, $class;
 }
