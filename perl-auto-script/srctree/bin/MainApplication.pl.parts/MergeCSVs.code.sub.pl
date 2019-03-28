@@ -6,11 +6,11 @@
 sub MergeCSVs {
   lclDebugger->Register('MergeCSVs');
   lclDebugger->OpenHere();
-  
+
   my $firstCSVFile = shift;
   my $secondCSVFile = shift;
   my $outputCSVFile = shift;
-  
+
   # 1) Go through $firstCSVFile
   #     a) in new columns, ask user if they want to create a new column in the intermediate CSV, or merge with an
   #        existing column.
@@ -18,6 +18,6 @@ sub MergeCSVs {
   #        to regex functions
   # 2) Do the same to $secondCSVFile, with the same intermediate CSV
   # 3) Run regex functions in intermediate CSV, then follow output map to output CSV.
-  
+  lclDebugger->Note("Unfinished, lol");
   lclDebugger->CloseHere();
 }

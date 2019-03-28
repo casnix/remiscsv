@@ -1,4 +1,4 @@
-# main(@,$) -- entry function
+# main($,@) -- entry function
 # Begins processing
 #-- Arguments: @args, the @ARGV or commandline arguments
 #              $argc, the $#ARGV or commandline arguments length
