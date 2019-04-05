@@ -39,7 +39,7 @@ my %Messenger;
   Levels => [
     # Level 0 -- Prints always unless in silent mode.
     sub {
-      if($GlobalEnvironment::Silent) return;
+      if($Silent) return;
 
       lclDebugger->Register('%Messenger{Levels}->[0]');
       lclDebugger->OpenHere();
@@ -51,7 +51,7 @@ my %Messenger;
 
     # Level 1 -- Prints unless in silent or minimal mode.
     sub {
-      if($GlobalEnvironment::Silent || $GlobalEnvironment::RunSilent) return;
+      if($Silent || $RunSilent) return;
 
       lclDebugger->Register('%Messenger{Levels}->[1]');
       lclDebugger->OpenHere();
@@ -83,12 +83,56 @@ sub new {
 # 2-          %msg => { level => $number, msg => $string}, hashed level and message.
 #-- Returns: Nothing.
 sub Message {
-  if($Silent);
+  my $this = shift;
+  if($this->$Silent) return;
 
   my $this = shift;
 
-  if(ref $_[0] eq "SCALAR") $Messenger{Levels}->[1](shift);
+  if(ref $_[0] eq "SCALAR"){
+    if($this->$RunSilent) return;
+
+    $Messenger{Levels}->[1](shift);
+  }
+  
   if(ref $_[0] eq "HASH") $Messenger{Levels}->[$_[0]->{level}]($_[0]->{msg});
+}
+
+# void Silence($) -- Turn on or off silent mode.
+#-- Argument: $bool, true to turn on silent mode, false to turn off.
+#-- Returns: Nothing.
+sub Silence {
+  my $this = shift;
+  my $bool = shift;
+
+  $this->$Silent = $bool;
+}
+
+# void ::GlobalSilence($) -- Turn on or off silent mode for all Messenger objects.
+#-- Argument: $bool, true to turn on silent mode, false to turn off.
+#-- Returns: Nothing.
+sub GlobalSilence {
+  my $bool = shift;
+
+  $Silent = $bool;
+}
+
+# void RunSilent($) -- Turn on or off run-silent mode.
+#-- Argument: $bool, true to turn on run-silent mode, false to turn off.
+#-- Returns: Nothing.
+sub RunSilent {
+  my $this = shift;
+  my $bool = shift;
+
+  $this->$RunSilent = $bool;
+}
+
+# void ::GlobalRunSilent($) -- Turn on or off run-silent mode for all Messenger objects.
+#-- Argument: $bool, true to turn on run-silent mode, false to turn off.
+#-- Returns: Nothing.
+sub GlobalRunSilent {
+  my $bool = shift;
+
+  $RunSilent = $bool;
 }
 
 #

@@ -5,7 +5,15 @@ use FindBin; use lib $FindBin::Bin;
 
 use GlobalEnvironment;
 use Debugger;
-use packet;
+use Packet;
+use Popsoof::Messenger;
+use Popsoof::String;
+
+#
+# ISA Modifications
+#our @ISA = qw(Popsoof::Messenger);
+#
+#
 
 #
 # Global variables for internal use
@@ -41,14 +49,36 @@ sub Main {
   lclDebugger->Register('Main');
   lclDebugger->OpenHere();
 
-  my($inputCSV, $outputCSV, $packetNum) = ProcessArguments($argc, $argv);
+  my($inputCSV, $outputCSV, $packetNum, %patternArgs) = ProcessArguments($argc, $argv);
   lclDebugger->Note("\$inputCSV = ".$inputCSV);
   lclDebugger->Note("\$outputCSV = ".$outputCSV);
   lclDebugger->Note("\$packetNum = ".$packetNum);
 
+  my $strInput = Popsoof::String->new($inputCSV);
+  my $strOutput = Popsoof::String->new($outputCSV);
+
+  my $packetRun = Packet->new($packetNum);
+  $packetRun->Message("Constructing a new packet based on packet number ".$packetNum.":\n");
+
+  $packetRun->Message("Loading input as reference...\n");
+  $packetRun->LoadInput(\$strInput);
+
+  $packetRun->Message("Loading output as disk location reference...\n");
+  $packetRun->FixOutput(\$strOutput);
+
+  $packetRun->Message("Storing pattern arguments...\n");
+  $packetRun->Store(%patternArgs);
+
+  $packetRun->Message("Done.\nExecuting packet:\n");
+  $packetRun->Execute();
+
+  my $strState = $packetRun->StateString();
+  $packetRun->Message("Packet completed with ".$returnState->Value()."\n");
+
+  my $returnState = $packetRun->State();
   lclDebugger->CloseHere();
 
-  return -1;
+  return $returnState;
 }
 
 # (string, string) ProcessArguments($,$) -- commandline argument processor
@@ -66,7 +96,7 @@ sub ProcessArguments {
   lclDebugger->Note("\$argc = ".$argc);
   lclDebugger->Note("\$argv = [ ".join(",", @{ $argv })." ]");
 
-  my($inputCSV, $outputCSV, $packetNum) = ("", "", "");
+  my($inputCSV, $outputCSV, $packetNum, %patternArgs) = ("", "", "", ());
 
   # Weirdly works online but not in CLI grep...?
   my $srcSwitches = qr/-(i|o|p|-input|-output|-packet)/;
@@ -85,6 +115,18 @@ sub ProcessArguments {
     ($outputSrcPath = $argv->[$argumentIndex + 1]) if $argv->[$argumentIndex] eq "-o" || $argv->[$argumentIndex] eq "--output";
     ($packetNum = $argv->[$argumentIndex + 1]) if $argv->[$argumentIndex] eq "-p" || $argv->[$argumentIndex] eq "--packet";
 
+    if($argv->[$argumentIndex] eq "-p") {
+      for(my $n = $argumentIndex + 2; $n < $argc; $n++){
+        my @keyValPair = split /=/, $argv->[$n];
+        my $key = $keyValPair[0];
+        my $value = $keyValPair[1];
+
+        %patternArgs{$key} = $value;
+      }
+
+      last;
+    }
+
     if($argv->[$argumentIndex] =~ $srcSwitches) {
       $boolSkip = true;
       next;
@@ -101,7 +143,7 @@ sub ProcessArguments {
   }
 
   lclDebugger->CloseHere();
-  return($inputCSV, $outputCSV, $packetNum);
+  return($inputCSV, $outputCSV, $packetNum, %patternArgs);
 }
 
 # void UsageDie(void) -- print the usage message and exit the program
@@ -111,7 +153,7 @@ sub UsageDie {
   lclDebugger->Register('UsageDie');
   lclDebugger->OpenHere();
 
-  die ("Usage: newman.pl [-whvdsS|-<long argument>] [-i input path] [-f output path] [-p pattern ring]\n".
+  die ("Usage: newman.pl [-whvdsS|-<long argument>|...] [-i input path] [-f output path] [-p pattern ring] [pattern arguments]\n".
     "Options: -i --input                    The input source parts directory path.\n".
     "         -o --output                   The output source file path.\n".
     "         -p --packet                   The pattern matching packet/ring to use.\n".
@@ -121,6 +163,15 @@ sub UsageDie {
     "         -d --debugger                 Enable the built in debugger (for autobild developers).\n".
     "         -s --silent                   Run with no output messaging.\n".
     "         -S --run-silent               Run with minimal output messaging.\n".
+    "Patterns:\n".
+    "      -p 0 2input=<file> rowtitle=<pattern>\n".
+    "               Pattern 0 extracts all cells in column <columntitle> from two CSV files,\n".
+    "               and outputs a single column CSV with all of those cells.\n".
+    "      -p 1 2input=<file>\n".
+    "               Pattern 1 compares two input CSV files and outputs a single column CSV file\n".
+    "               with the row numbers of matching cells.\n".
+    "      -p 2 2input=<file>\n".
+    "               Pattern 2 removes all rows matching the row numbers in a second input file.\n".
     "Created by Matt Rienzo, 2019.\n");
 
   lclDebugger->CloseHere();
